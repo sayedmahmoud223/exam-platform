@@ -34,8 +34,9 @@ export const login = async (req, res, next) => {
     await user.save();
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: true,            
-        sameSite: "None",        
+        secure: true,         
+        sameSite: "None",
+        domain: process.env.MOOD === "production" ? ".vercel.app" : "localhost",
         path: "/",              
         maxAge: 15 * 24 * 60 * 60 * 1000,
     });
