@@ -32,13 +32,11 @@ export const login = async (req, res, next) => {
 
     user.refreshToken = refreshToken;
     await user.save();
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: true,         
-        sameSite: "None",
-        domain: process.env.MOOD === "production" ? ".vercel.app" : "localhost",
-        path: "/",              
-        maxAge: 15 * 24 * 60 * 60 * 1000,
+        secure: process.env.MOOD === 'production',
+        sameSite: 'Strict',
+        maxAge: 15 * 24 * 60 * 60 * 1000
     });
 
     return res.status(200).json({
@@ -86,5 +84,4 @@ export const logout = async (req, res, next) => {
 
     return res.status(200).json({ success: true, message: "Logged out successfully" });
 };
-
 
