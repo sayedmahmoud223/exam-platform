@@ -32,11 +32,12 @@ export const login = async (req, res, next) => {
 
     user.refreshToken = refreshToken;
     await user.save();
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict',
-        maxAge: 15 * 24 * 60 * 60 * 1000
+        secure: true,            
+        sameSite: "None",        
+        path: "/",              
+        maxAge: 15 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({
