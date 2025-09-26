@@ -6,13 +6,14 @@ const examResultSchema = new mongoose.Schema({
 
     answers: [
         {
-            questionId: Number, // index of the question in exam.questions
+            questionId: Number,
             answer: String
         }
     ],
 
     score: Number,
-    graded: { type: Boolean, default: false }, // auto or manual
+    graded: { type: Boolean, default: false }, 
+    submittedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 module.exports = mongoose.model("ExamResult", examResultSchema);

@@ -3,8 +3,8 @@ import mongoose from "mongoose";
 const examSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: String,
-    level: { type: mongoose.Schema.Types.ObjectId, ref: "Level", required: true },
-
+    level: { type: mongoose.Schema.Types.ObjectId, ref: "Level", required: true },  
+    teacher: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     questions: [
         {
             questionText: String,
@@ -12,9 +12,9 @@ const examSchema = new mongoose.Schema({
             correctAnswer: String, // For auto-grading
         }
     ],
-
     startTime: Date,
     durationMinutes: Number,
+    passingScore: { type: Number },
 }, { timestamps: true });
 
-module.exports = mongoose.model("Exam", examSchema);
+export const examModel = mongoose.model("Exam", examSchema);
