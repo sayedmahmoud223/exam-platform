@@ -35,7 +35,7 @@ export const login = async (req, res, next) => {
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.MOOD === 'production',
-        sameSite: 'Strict',
+        sameSite: 'None',
         maxAge: 15 * 24 * 60 * 60 * 1000
     });
 
