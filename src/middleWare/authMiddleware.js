@@ -10,11 +10,12 @@ export const roles = {
 
 export const authMiddleware = (roles = []) => {
     return (async (req, res, next) => {
-        const { accessToken } = req.headers
-        if (!accessToken) return next(new ResError("Authentication required. Please login.", 401));
-        const payload = methodsWillUsed.verifyToken({ token: accessToken })
+        const { token } = req.headers
+        console.log({token});
+        if (!token) return next(new ResError("Authentication required. Please login.", 401));
+        const payload = methodsWillUsed.verifyToken({ token })
         const user = await userModel.findById({ _id: payload.id })
-        if (!user) return next(new ResError("User not found", 400));
+        if (!user) return next(new ResError("User not found", 400));    
         if (!roles.includes(user.role)) return next(new ResError("Access denied. Unauthorized role.", 403));
         req.user = { id: user.id, role: user.role, email: user.email }
         return next()

@@ -27,17 +27,17 @@ export const login = async (req, res, next) => {
     const isMatch = methodsWillUsed.compare({ plaintext: password, hashValue: user.password });
     if (!isMatch) return next(new ResError("invalid credentials", 401));
 
-    const accessToken = methodsWillUsed.generateToken({ payload: { id: user._id, email: user.email }, expiresIn: "1h" });
+    const accessToken = methodsWillUsed.generateToken({ payload: { id: user._id, email: user.email }, expiresIn: "15d" });
     const refreshToken = methodsWillUsed.generateToken({ payload: { id: user._id, email: user.email }, expiresIn: "15d" });
 
-    user.refreshToken = refreshToken;
+    // user.refreshToken = refreshToken;
     await user.save();
-    res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'None',
-        maxAge: 15 * 24 * 60 * 60 * 1000
-    });
+    // res.cookie('refreshToken', refreshToken, {
+    //     httpOnly: true,
+    //     secure: true,
+    //     sameSite: 'None',
+    //     maxAge: 15 * 24 * 60 * 60 * 1000
+    // });
 
     return res.status(200).json({
         success: true,
@@ -47,41 +47,41 @@ export const login = async (req, res, next) => {
 };
 
 
-export const refreshAccessToken = async (req, res, next) => {
-    const token = req.cookies.refreshToken;
-    console.log(token);
+// export const refreshAccessToken = async (req, res, next) => {
+//     const token = req.cookies.refreshToken;
+//     console.log(token);
 
-    if (!token) return next(new ResError("refresh token missing", 400));
+//     if (!token) return next(new ResError("refresh token missing", 400));
 
-    const decoded = methodsWillUsed.verifyToken({ token });
-    const user = await userModel.findById(decoded.id);
+//     const decoded = methodsWillUsed.verifyToken({ token });
+//     const user = await userModel.findById(decoded.id);
 
-    if (!user || user.refreshToken !== token) {
-        return next(new ResError("invalid refresh token", 401));
-    }
+//     if (!user || user.refreshToken !== token) {
+//         return next(new ResError("invalid refresh token", 401));
+//     }
 
-    const newAccessToken = methodsWillUsed.generateToken({
-        payload: { id: user._id, email: user.email },
-        expiresIn: "1h"
-    });
+//     const newAccessToken = methodsWillUsed.generateToken({
+//         payload: { id: user._id, email: user.email },
+//         expiresIn: "1h"
+//     });
 
-    return res.status(200).json({ accessToken: newAccessToken });
-};
+//     return res.status(200).json({ accessToken: newAccessToken });
+// };
 
 
-export const logout = async (req, res, next) => {
-    const token = req.cookies.refreshToken;
-    if (!token) return res.status(200).json({ success: true, message: "Logged out" });
-    const decoded = methodsWillUsed.verifyToken({ token });
-    const user = await userModel.findById(decoded.id);
+// export const logout = async (req, res, next) => {
+//     const token = req.cookies.refreshToken;
+//     if (!token) return res.status(200).json({ success: true, message: "Logged out" });
+//     const decoded = methodsWillUsed.verifyToken({ token });
+//     const user = await userModel.findById(decoded.id);
 
-    if (user) {
-        user.refreshToken = null;
-        await user.save();
-    }
+//     if (user) {
+//         user.refreshToken = null;
+//         await user.save();
+//     }
 
-    res.clearCookie('refreshToken');
+//     res.clearCookie('refreshToken');
 
-    return res.status(200).json({ success: true, message: "Logged out successfully" });
-};
+//     return res.status(200).json({ success: true, message: "Logged out successfully" });
+// };
 
