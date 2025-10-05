@@ -16,4 +16,12 @@ const examResultSchema = new mongoose.Schema({
     submittedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
+examResultSchema.virtual("student_result", {
+    ref: "User",
+    localField: "student",
+    foreignField: "_id",
+})
+examResultSchema.set("toJSON", { virtuals: true });
+examResultSchema.set("toObject", { virtuals: true })    
+
 module.exports = mongoose.model("ExamResult", examResultSchema);

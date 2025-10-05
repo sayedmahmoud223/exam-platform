@@ -98,12 +98,18 @@ export class ApiFeatures {
 
     search() {
         if (this.queryData.search) {
+            const keyword = this.queryData.search;
+
             this.mongooseQuery = this.mongooseQuery.find({
-                $or: [{ name: { $regex: this.queryData.search, $options: "i" } }],
+                $or: [
+                    { name: { $regex: keyword, $options: "i" } },
+                    { email: { $regex: keyword, $options: "i" } }
+                ]
             });
         }
         return this;
     }
+
 
     sort() {
         if (this.queryData.sort) {

@@ -19,7 +19,15 @@ const userSchema = new mongoose.Schema({
 
     // Student-specific
     teacher: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // linked teacher
-    openedExams: [{ type: mongoose.Schema.Types.ObjectId, ref: "Exam" }]
+    openedExams: [{ type: mongoose.Schema.Types.ObjectId, ref: "Exam" }],
+    
+    // OTP
+    resetPasswordOtp: { type: String },
+    resetPasswordOtpExpiresAt: { type: Date },
+
+    // user levels
+    levels: [{ type: mongoose.Schema.Types.ObjectId, ref: "Level" }],
+
 }, { timestamps: true });
 
 export const userModel = mongoose.model("User", userSchema);

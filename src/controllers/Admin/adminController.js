@@ -138,14 +138,14 @@ export const assignStudentToTeacher = async (req, res, next) => {
 
     await userModel.findByIdAndUpdate(studentId, {
         $addToSet: { teacher: teacher._id },
+        $addToSet: { levels: levelId },
         isActive: true,
-        level
     });
 
     const updatedStudent = await userModel.findById(studentId).populate("teacher", "name email");
     return res.status(200).json({
         success: true,
-        message: "Teacher assigned to student successfully",
+        message: "Student assigned to Teacher successfully",
         data: {
             id: updatedStudent._id,
             name: updatedStudent.name,
