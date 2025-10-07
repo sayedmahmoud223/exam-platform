@@ -27,7 +27,17 @@ const userSchema = new mongoose.Schema({
 
     // user levels
     levels: [{ type: mongoose.Schema.Types.ObjectId, ref: "Level" }],
+    isDeleted: { type: Boolean, default: false }
 
 }, { timestamps: true });
+
+userSchema.pre(/^find/, function (next) {
+    this.where({ isDeleted: false });
+    next();
+});
+
+userSchema.set("toJSON", { virtuals: true });
+userSchema.set("toObject", { virtuals: true })
+
 
 export const userModel = mongoose.model("User", userSchema);

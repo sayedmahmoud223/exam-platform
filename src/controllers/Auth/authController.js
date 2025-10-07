@@ -55,13 +55,13 @@ function generateOtp() {
 
 
 
-export async function forgotPassword(req, res) {
+export async function forgotPassword(req, res, next) {
     const { email } = req.body;
-    if (!email) return next(new ResError("Email requierd"), 400)
+    if (!email) return next(new ResError("Email requierd", 400))
 
     const user = await userModel.findOne({ email });
     if (!user) {
-        return next(new ResError("If that email exists, an OTP has been sent."), 400)
+        return next(new ResError("If that email exists, an OTP has been sent.", 400))
     }
 
     const otp = generateOtp();
@@ -78,14 +78,14 @@ export async function forgotPassword(req, res) {
         html: `<p>Your OTP is <b>${otp}</b>. It will expire in 10 minutes.</p>`
     })
 
-    return res.json({ message: "If that email exists, an OTP has been sent." });
+    return res.status(200).json({ message: "If that email exists, an OTP has been sent." });
 }
 
 
 export async function resetPassword(req, res, next) {
     const { email, otp, password } = req.body;
     if (!email || !otp || !password) {
-        return next(new ResError("email, otp, password required"), 400)
+        return next(new ResError("email, otp, password required", 400))
     }
 
     const user = await userModel.findOne({ email });
@@ -96,7 +96,7 @@ export async function resetPassword(req, res, next) {
         !user.resetPasswordOtpExpiresAt ||
         user.resetPasswordOtpExpiresAt < new Date()
     ) {
-        return next(new ResError("Invalid or expired OTP"), 400)
+        return next(new ResError("Invalid or expired OTP", 400))
     }
 
     // update password
@@ -111,18 +111,33 @@ export async function resetPassword(req, res, next) {
 
 }
 
-export async function updateProfile(req, res) {
+export async function updateProfile(req, res, next) {
     const { id } = req.user;
+    const { userId } = req.body;
+
+    const isAdmin = await userModel.findById(id);
+    if (isAdmin.role !== "ADMIN") return next(new ResError("User can`t edit profile", 403));
 
     if (Object.entries(req.body).length === 0) {
         return next(new ResError("Nothing sent to update", 400));
     }
 
-    const user = await userModel.findByIdAndUpdate(id, req.body, { new: true });
-    if (!user) {
-        return next(new ResError("User not found", 404));
-    }
+    const user = await userModel.findByIdAndUpdate(userId, req.body, { new: true });
+    if (!user) return next(new ResError("User not found", 404));
 
+
+    return res.json({ message: "User updated successfully", user });
+}
+
+export async function deleteProfile(req, res, next) {
+    const { userId } = req.body;
+
+    const user = await userModel.findById(userId);
+    if (!user) return next(new ResError("User not found", 404));
+    if (Object.entries(req.body).length === 0) {
+        return next(new ResError("Nothing sent to update", 400));
+    }
+    if (!user) return next(new ResError("User not found", 404));
     return res.json({ message: "User updated successfully", user });
 }
 

@@ -8,7 +8,10 @@ const router = express.Router()
 router.get("/students", authMiddleware([roles.TEACHER]), asyncHandler(teacherController.getAllTeacherStudents))
 router.get("/student/:studentId", authMiddleware([roles.TEACHER]), asyncHandler(teacherController.getStudentDetails))
 router.get("/levels", authMiddleware([roles.TEACHER]), asyncHandler(teacherController.getAllTeacherLevels))
-router.get("/level_students/:levelId", authMiddleware([roles.TEACHER]), asyncHandler(teacherController.getAllLevelStudents))
+router.get("/exams", authMiddleware([roles.TEACHER]), asyncHandler(teacherController.getAllTeacherExams))
+router.patch("/:examId/assign-student/:studentId", authMiddleware([roles.TEACHER]), asyncHandler(teacherController.assignStudentToExam))
+router.get("/exam_students/:examId", authMiddleware([roles.TEACHER]), asyncHandler(teacherController.getAllExamStudents))
+// router.get("/level_students/:levelId", authMiddleware([roles.TEACHER]), asyncHandler(teacherController.getAllLevelStudents))
 
 
 export default router

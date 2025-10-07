@@ -5,6 +5,7 @@ const examSchema = new mongoose.Schema({
     description: String,
     level: { type: mongoose.Schema.Types.ObjectId, ref: "Level", required: true },  
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    assignedStudents: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     questions: [
         {
             questionText: String,

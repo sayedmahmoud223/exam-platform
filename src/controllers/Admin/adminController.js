@@ -5,6 +5,8 @@ import { ApiFeatures } from "../../utilis/apiFeatures.js";
 import { ResError } from "../../utilis/ErrorHandling.js";
 import XLSX from "xlsx";
 
+
+
 export const getAllUsers = async (req, res, next) => {
     const apiFeatures = new ApiFeatures(userModel.find().select("-password"), req.query, userModel)
         .paginate()
@@ -62,7 +64,7 @@ export const createTeacherLevels = async (req, res, next) => {
     return res.status(201).json({
         success: true,
         message: "Created successfully",
-        data: { id, email, name, level: createLevels.title, description: createLevels.description }
+        data: { id:createLevels.id, email, name, level: createLevels.title, description: createLevels.description }
     });
 
 }
@@ -70,8 +72,10 @@ export const createTeacherLevels = async (req, res, next) => {
 export const deleteTeacherLevel = async (req, res, next) => {
     const { levelId } = req.params;
 
-    const level = await levelModel.findByIdAndDelete(levelId);
-    console.log(level);
+    const level = await levelModel.findByIdAndDelete(levelId, {
+        new: true,
+        runValidators: true
+    });
 
     if (!level) {
         return next(new ResError("Level not found", 404));
@@ -137,19 +141,20 @@ export const assignStudentToTeacher = async (req, res, next) => {
     }
 
     await userModel.findByIdAndUpdate(studentId, {
-        $addToSet: { teacher: teacher._id },
-        $addToSet: { levels: levelId },
+        $addToSet: { teacher: teacherId, levels: levelId },
         isActive: true,
     });
 
-    const updatedStudent = await userModel.findById(studentId).populate("teacher", "name email");
+    const updatedStudent = await userModel.findById(studentId).populate("teacher", "name email").populate("levels", "title description");
+
     return res.status(200).json({
         success: true,
         message: "Student assigned to Teacher successfully",
         data: {
             id: updatedStudent._id,
             name: updatedStudent.name,
-            teachers: updatedStudent.teacher
+            teachers: updatedStudent.teacher,
+            levels: updatedStudent.levels
         },
     });
 };
