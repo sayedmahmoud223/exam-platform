@@ -4,7 +4,7 @@ const examSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: String,
     level: { type: mongoose.Schema.Types.ObjectId, ref: "Level", required: true },  
-    teacher: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    teachers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }],
     assignedStudents: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     questions: [
         {
@@ -13,9 +13,16 @@ const examSchema = new mongoose.Schema({
             correctAnswer: String, // For auto-grading
         }
     ],
+    group: {
+        type: String,
+        enum: ["A", "B", "C", "D", "E"],
+        required: true,
+    },
     startTime: Date,
     durationMinutes: Number,
     passingScore: { type: Number },
 }, { timestamps: true });
+
+examSchema.index({ level: 1, group: 1 });
 
 export const examModel = mongoose.model("Exam", examSchema);

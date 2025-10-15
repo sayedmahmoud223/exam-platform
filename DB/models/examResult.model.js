@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const examResultSchema = new mongoose.Schema({
     student: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    teacher: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     exam: { type: mongoose.Schema.Types.ObjectId, ref: "Exam", required: true },
-
     answers: [
         {
             questionId: Number,
@@ -24,4 +24,4 @@ examResultSchema.virtual("student_result", {
 examResultSchema.set("toJSON", { virtuals: true });
 examResultSchema.set("toObject", { virtuals: true })    
 
-module.exports = mongoose.model("ExamResult", examResultSchema);
+export const examModel = mongoose.model("ExamResult", examResultSchema);

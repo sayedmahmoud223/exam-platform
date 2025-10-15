@@ -15,12 +15,10 @@ const userSchema = new mongoose.Schema({
     // Teacher-specific
     isActive: { type: Boolean, default: false }, // admin approves teacher
 
-    refreshToken: { type: String},
+    refreshToken: { type: String },
 
     // Student-specific
-    teacher: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // linked teacher
-    openedExams: [{ type: mongoose.Schema.Types.ObjectId, ref: "Exam" }],
-    
+    teacher: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // linked teacher    
     // OTP
     resetPasswordOtp: { type: String },
     resetPasswordOtpExpiresAt: { type: Date },
@@ -30,6 +28,9 @@ const userSchema = new mongoose.Schema({
     isDeleted: { type: Boolean, default: false }
 
 }, { timestamps: true });
+
+userSchema.index({ role: 1, isActive: 1, isDeleted: 1, createdAt: -1 });
+userSchema.index({ name: "text", email: "text" });
 
 userSchema.pre(/^find/, function (next) {
     this.where({ isDeleted: false });

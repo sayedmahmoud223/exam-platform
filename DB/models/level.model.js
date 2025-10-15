@@ -1,9 +1,11 @@
 import mongoose from "mongoose"
 
+
+
 const levelSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: String,
-    teacher: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    teachers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }],
 }, { timestamps: true });
 
 levelSchema.virtual("exams", {
@@ -15,7 +17,7 @@ levelSchema.virtual("exams", {
 levelSchema.virtual("students", {
     ref: "User",
     localField: "_id",
-    foreignField: "levels",  
+    foreignField: "levels",
 });
 
 levelSchema.set("toJSON", { virtuals: true });
