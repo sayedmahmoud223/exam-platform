@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
     resetPasswordOtpExpiresAt: { type: Date },
 
     // user levels
-    levels: [{ type: mongoose.Schema.Types.ObjectId, ref: "Level" }],
+    level: { type: mongoose.Schema.Types.ObjectId, ref: "Level" },
     isDeleted: { type: Boolean, default: false }
 
 }, { timestamps: true });

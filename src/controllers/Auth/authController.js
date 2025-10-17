@@ -1,3 +1,4 @@
+import { levelModel } from "../../../DB/models/level.model.js";
 import { userModel } from "../../../DB/models/user.model.js";
 import { ResError } from "../../utilis/ErrorHandling.js";
 import { methodsWillUsed } from "../../utilis/methodsWillUse.js";
@@ -30,7 +31,6 @@ export const login = async (req, res, next) => {
 
     const accessToken = methodsWillUsed.generateToken({ payload: { id: user._id, email: user.email }, expiresIn: "15d" });
     const refreshToken = methodsWillUsed.generateToken({ payload: { id: user._id, email: user.email }, expiresIn: "15d" });
-
     // user.refreshToken = refreshToken;
     await user.save();
     // res.cookie('refreshToken', refreshToken, {
@@ -130,15 +130,11 @@ export async function updateProfile(req, res, next) {
 }
 
 export async function deleteProfile(req, res, next) {
-    const { userId } = req.body;
-
+    const { userId } = req.params;
     const user = await userModel.findById(userId);
-    if (!user) return next(new ResError("User not found", 404));
-    if (Object.entries(req.body).length === 0) {
-        return next(new ResError("Nothing sent to update", 400));
-    }
-    if (!user) return next(new ResError("User not found", 404));
-    return res.json({ message: "User updated successfully", user });
+    user.isDeleted = true
+    await user.save()
+    return res.status(204).json({ message: "User deleted successfully" });
 }
 
 

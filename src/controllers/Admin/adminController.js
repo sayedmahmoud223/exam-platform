@@ -32,18 +32,33 @@ export const teacherApproval = async (req, res, next) => {
         return next(new ResError("User is not a teacher", 400));
     }
 
+    const wasInactive = !teacher.isActive;
     teacher.isActive = isActive;
     await teacher.save();
 
-    const { id, email, isActive: active } = teacher;
+    if (isActive && wasInactive) {
+        const commonLevels = await levelModel.find({ teachers: { $exists: true, $ne: [] } });
+
+        if (commonLevels.length === 0) {
+            return next(new ResError("No common levels found", 400));
+        }
+
+        const levelIds = commonLevels.map((lvl) => lvl._id);
+
+        await levelModel.updateMany(
+            { _id: { $in: levelIds } },
+            { $addToSet: { teachers: teacher._id } } 
+        );
+    }
+
+    const { _id, email } = teacher;
 
     return res.status(200).json({
         success: true,
         message: "Updated successfully",
-        data: { id, email, active },
+        data: { id: _id, email, active: teacher.isActive },
     });
-
-}
+};
 
 export const createTeacherLevels = async (req, res, next) => {
     const { teacherId } = req.params;
@@ -194,111 +209,106 @@ export const updateTeacherLevel = async (req, res, next) => {
 
 
 export const getTeacherLevels = async (req, res, next) => {
-        const { teacherId } = req.params;
+    const { teacherId } = req.params;
 
-        const levels = await levelModel
-            .find({ teachers: teacherId })
-            .select("title description subLevels") 
-            .lean(); 
+    const levels = await levelModel
+        .find({ teachers: teacherId })
+        .select("title description subLevels")
+        .lean();
 
-        if (!levels.length) {
-            return next(new ResError("Teacher doesn't have any levels", 404));
-        }
+    if (!levels.length) {
+        return next(new ResError("Teacher doesn't have any levels", 404));
+    }
 
-        const levelIds = levels.map((lvl) => lvl._id);
+    const levelIds = levels.map((lvl) => lvl._id);
 
-        const examsGrouped = await examModel.aggregate([
-            { $match: { level: { $in: levelIds } } },
-            {
-                $group: {
-                    _id: { level: "$level", group: "$group" },
-                    exams: {
-                        $push: {
-                            _id: "$_id",
-                            title: "$title",
-                            startTime: "$startTime",
-                            durationMinutes: "$durationMinutes",
-                        },
+    const examsGrouped = await examModel.aggregate([
+        { $match: { level: { $in: levelIds } } },
+        {
+            $group: {
+                _id: { level: "$level", group: "$group" },
+                exams: {
+                    $push: {
+                        _id: "$_id",
+                        title: "$title",
+                        startTime: "$startTime",
+                        durationMinutes: "$durationMinutes",
                     },
                 },
             },
-            { $sort: { "_id.group": 1 } },
-        ]);
+        },
+        { $sort: { "_id.group": 1 } },
+    ]);
 
-        const result = levels.map((level) => {
-            const levelExams = examsGrouped
-                .filter((eg) => String(eg._id.level) === String(level._id))
-                .map((eg) => ({
-                    group: eg._id.group,
-                    exams: eg.exams,
-                }));
+    const result = levels.map((level) => {
+        const levelExams = examsGrouped
+            .filter((eg) => String(eg._id.level) === String(level._id))
+            .map((eg) => ({
+                group: eg._id.group,
+                exams: eg.exams,
+            }));
 
-            return {
-                ...level,
-                examsGrouped: levelExams,
-            };
-        });
+        return {
+            ...level,
+            examsGrouped: levelExams,
+        };
+    });
 
-        return res.status(200).json({
-            success: true,
-            message: "Fetched successfully",
-            data: { levels: result },
-        });
+    return res.status(200).json({
+        success: true,
+        message: "Fetched successfully",
+        data: { levels: result },
+    });
 };
 
 
 export const assignStudentToTeacher = async (req, res, next) => {
     const { studentId, teacherId } = req.params;
-    const { levelIds } = req.body;
+    const { levelId } = req.body;
 
+    // check student
     const student = await userModel.findById(studentId);
     if (!student || student.role !== "STUDENT") {
         return next(new ResError("Student not found or invalid role", 404));
     }
 
-    if (!levelIds || !Array.isArray(levelIds) || levelIds.length === 0) {
-        return next(new ResError("Level IDs are required", 400));
-    }
-
-    const levels = await levelModel.find({ _id: { $in: levelIds } });
-    if (levels.length !== levelIds.length) {
-        return next(new ResError("One or more levels not found", 404));
-    }
-
+    // check teacher
     const teacher = await userModel.findById(teacherId);
     if (!teacher || teacher.role !== "TEACHER" || !teacher.isActive) {
         return next(new ResError("Teacher not found or not active", 404));
     }
 
-    const teacherInLevels = levels.some((lvl) =>
-        lvl.teachers.map(String).includes(String(teacherId))
-    );
+    // check level
+    const level = await levelModel.findById(levelId);
+    if (!level) return next(new ResError("Level not found", 404));
 
-    if (!teacherInLevels) {
-        return next(new ResError("Teacher is not part of any provided Level", 400));
+    // ensure teacher belongs to this level
+    const isTeacherInLevel = level.teachers
+        .map(String)
+        .includes(String(teacherId));
+    if (!isTeacherInLevel) {
+        return next(new ResError("Teacher is not part of this Level", 400));
     }
 
     await userModel.findByIdAndUpdate(studentId, {
-        $addToSet: {
-            teacher: teacherId,
-            levels: { $each: levelIds },
-        },
+        teacher: teacherId,
+        level: levelId,
         isActive: true,
     });
 
     const updatedStudent = await userModel
         .findById(studentId)
         .populate("teacher", "name email")
-        .populate("levels", "title description subLevel");
+        .populate("level", "title description");
 
     return res.status(200).json({
         success: true,
-        message: "Student assigned to Teacher successfully",
+        message: "Student assigned to Level successfully",
         data: {
             id: updatedStudent._id,
             name: updatedStudent.name,
-            teachers: updatedStudent.teacher,
-            levels: updatedStudent.levels,
+            teacher: updatedStudent.teacher,
+            level: updatedStudent.level,
         },
     });
 };
@@ -392,7 +402,7 @@ export const getTeacherStudents = async (req, res, next) => {
 
 export const uploadExamForLevel = async (req, res, next) => {
     const { levelId, teacherId } = req.params;
-    const { title, description, passingScore, durationMinutes,group } = req.body;
+    const { title, description, passingScore, durationMinutes, group } = req.body;
 
     if (!req.file) {
         return next(new ResError("No file uploaded", 400));
@@ -434,7 +444,8 @@ export const uploadExamForLevel = async (req, res, next) => {
         durationMinutes,
         passingScore,
         startTime: new Date(),
-        group    });
+        group
+    });
 
     return res.status(200).json({
         message: "Exam uploaded successfully",
