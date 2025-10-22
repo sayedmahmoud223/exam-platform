@@ -107,7 +107,7 @@ export async function resetPassword(req, res, next) {
     user.resetPasswordOtpExpiresAt = null;
     await user.save();
 
-    return res.json({ message: "Password updated successfully" });
+    return res.status(200).json({ message: "Password updated successfully" });
 
 }
 
@@ -126,7 +126,7 @@ export async function updateProfile(req, res, next) {
     if (!user) return next(new ResError("User not found", 404));
 
 
-    return res.json({ message: "User updated successfully", user });
+    return res.status(200).json({ message: "User updated successfully", user });
 }
 
 export async function deleteProfile(req, res, next) {
@@ -136,6 +136,21 @@ export async function deleteProfile(req, res, next) {
     await user.save()
     return res.status(204).json({ message: "User deleted successfully" });
 }
+
+export async function userProfile(req, res, next) {
+    const { id } = req.user
+    const user = await userModel.findById(id).select("-password");
+    if (!user) return new ResError("User not found", 400)
+    return res.status(200).json({
+        success: true,
+        message: "User data fetched successfully",
+        data: {
+            user
+        },
+    }
+    );
+}
+
 
 
 
