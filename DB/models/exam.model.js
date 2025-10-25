@@ -21,8 +21,15 @@ const examSchema = new mongoose.Schema({
     startTime: Date,
     durationMinutes: Number,
     passingScore: { type: Number },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
 }, { timestamps: true });
 
 examSchema.index({ level: 1, group: 1 });
+examSchema.pre(/^find/, function (next) {
+    // this => current query
+    this.where({ isDeleted: false });
+    next();
+});
 
 export const examModel = mongoose.model("Exam", examSchema);

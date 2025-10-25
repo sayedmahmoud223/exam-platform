@@ -1,11 +1,34 @@
 import { examModel } from "../../../DB/models/exam.model.js";
 import { levelModel } from "../../../DB/models/level.model.js";
 import { userModel } from "../../../DB/models/user.model.js";
+import { roles } from "../../middleWare/authMiddleware.js";
 import { ApiFeatures } from "../../utilis/apiFeatures.js";
 import { ResError } from "../../utilis/ErrorHandling.js";
 import XLSX from "xlsx";
 
 
+
+export const getSystemStats = async (req, res, next) => {
+        const [teachersCount, studentsCount, adminsCount, levelsCount, examsCount] = await Promise.all([
+            userModel.countDocuments({ role:roles.TEACHER , isDeleted: false }),
+            userModel.countDocuments({ role:roles.STUDENT , isDeleted: false }),
+            userModel.countDocuments({ role:roles.Admin , isDeleted: false }),
+            levelModel.countDocuments({ isDeleted: false }),
+            examModel.countDocuments({ isDeleted: false }),
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            message: "System statistics fetched successfully",
+            data: {
+                teachersCount,
+                studentsCount,
+                adminsCount,
+                levelsCount,
+                examsCount,
+            },
+        });
+};
 
 export const getAllUsers = async (req, res, next) => {
     const apiFeatures = new ApiFeatures(userModel.find().select("-password"), req.query, userModel)
@@ -452,3 +475,5 @@ export const uploadExamForLevel = async (req, res, next) => {
         data: exam
     });
 };
+
+

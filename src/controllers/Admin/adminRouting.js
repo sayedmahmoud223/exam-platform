@@ -5,6 +5,7 @@ import { asyncHandler } from "../../utilis/ErrorHandling.js"
 import { fileType, fileUpload } from "../../utilis/multer.js"
 const router = express.Router()
 
+router.get("/dashboard", authMiddleware(roles.Admin), asyncHandler(adminController.getSystemStats))
 router.get("/users", authMiddleware(roles.Admin), asyncHandler(adminController.getAllUsers))
 router.patch("/teacher/:teacherId", authMiddleware(roles.Admin), asyncHandler(adminController.teacherApproval))
 router.post("/teacher/:teacherId/levels", authMiddleware(roles.Admin), asyncHandler(adminController.createTeacherLevels))

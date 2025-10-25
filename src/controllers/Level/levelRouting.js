@@ -7,6 +7,8 @@ const router = express.Router()
 
 router.get("/", authMiddleware([roles.Admin]), asyncHandler(levelController.getAllLevels))
 router.get("/:levelId", authMiddleware([roles.Admin]), asyncHandler(levelController.getLevelDetails))
+router.patch("/:levelId", authMiddleware([roles.Admin]), asyncHandler(levelController.deleteLevelById))
+router.patch("/:levelId/update", authMiddleware([roles.Admin]), asyncHandler(levelController.updateLevel))
 
 
 
