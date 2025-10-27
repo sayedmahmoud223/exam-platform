@@ -16,7 +16,7 @@ router.delete("/level/:levelId", authMiddleware(roles.Admin), asyncHandler(admin
 router.patch("/assign-student/:studentId/teacher/:teacherId", authMiddleware(roles.Admin), asyncHandler(adminController.assignStudentToTeacher))
 router.patch("/remove-student/:studentId/teacher/:teacherId", authMiddleware(roles.Admin), asyncHandler(adminController.removeTeacherFromStudent))
 router.get("/teacher/:teacherId/students", authMiddleware(roles.Admin), asyncHandler(adminController.getTeacherStudents))
-router.post("/upload-exam/teacher/:teacherId/level/:levelId", authMiddleware(roles.Admin),fileUpload(fileType.excel).single("excelSheet"), asyncHandler(adminController.uploadExamForLevel))
+router.post("/upload-exam/level/:levelId", authMiddleware(roles.Admin),fileUpload(fileType.excel).single("excelSheet"), asyncHandler(adminController.uploadExamForLevel))
 
 
 export default router

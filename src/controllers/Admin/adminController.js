@@ -424,7 +424,7 @@ export const getTeacherStudents = async (req, res, next) => {
 }
 
 export const uploadExamForLevel = async (req, res, next) => {
-    const { levelId, teacherId } = req.params;
+    const { levelId } = req.params;
     const { title, description, passingScore, durationMinutes, group } = req.body;
 
     if (!req.file) {
@@ -432,10 +432,6 @@ export const uploadExamForLevel = async (req, res, next) => {
     }
 
     // check if level exists
-    const teacher = await userModel.findById(teacherId);
-    if (!teacher) {
-        return next(new ResError("Teacher not found", 404));
-    }
     const level = await levelModel.findById(levelId);
     if (!level) {
         return next(new ResError("Level not found", 404));
