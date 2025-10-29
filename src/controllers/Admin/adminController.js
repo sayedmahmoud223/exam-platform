@@ -437,6 +437,11 @@ export const uploadExamForLevel = async (req, res, next) => {
         return next(new ResError("Level not found", 404));
     }
 
+    // const teachers = await userModel.find({ _id: { $in: level.teachers }, role: "TEACHER" });
+    // if (!teachers) {
+    //     return next(new ResError("Level not found", 404));
+    // }
+
     // read excel buffer
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0]; // first sheet
@@ -458,7 +463,7 @@ export const uploadExamForLevel = async (req, res, next) => {
         title,
         description,
         level: levelId,
-        teacher: teacherId,
+        // teacher: teacherId,
         questions,
         durationMinutes,
         passingScore,

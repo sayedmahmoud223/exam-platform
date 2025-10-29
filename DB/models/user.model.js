@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
     refreshToken: { type: String },
 
     // Student-specific
-    teacher: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // linked teacher    
+    // teacher: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // linked teacher    
     // OTP
     resetPasswordOtp: { type: String },
     resetPasswordOtpExpiresAt: { type: Date },
