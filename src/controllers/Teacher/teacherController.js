@@ -19,6 +19,7 @@ export const getAllTeacherStudents = async (req, res, next) => {
 export const getStudentDetails = async (req, res, next) => {
     const { studentId } = req.params
     const student = await userModel.findOne({ _id: studentId, teacher: { $in: [req.user.id] } }).select("-password -refreshToken -teacher")
+        .populate("level", "title description");
     if (!student) return next(new ResError("Student not found", 404));
     return res.status(200).json({
         success: true,
@@ -29,7 +30,7 @@ export const getStudentDetails = async (req, res, next) => {
 }
 
 export const getAllTeacherLevels = async (req, res, next) => {
-    const apiFeatures = new ApiFeatures(levelModel.find({ teacher: req.user.id }).select("-password").populate("exams", "title description"), req.query, userModel)
+    const apiFeatures = new ApiFeatures(levelModel.find({ teachers: { $in: [req.user.id] } }).select("-password -teachers"), req.query, userModel)
         .paginate()
         .filter()
         .search()
@@ -39,22 +40,22 @@ export const getAllTeacherLevels = async (req, res, next) => {
     return res.status(200).json(result);
 }
 
-export const getAllLevelStudents = async (req, res, next) => {
-    const { levelId } = req.params;
+export const getAllTeachersLevelsWithExams = async (req, res, next) => {
+    // const { levelId } = req.params;
 
-    const level = await levelModel.findOne({
-        _id: levelId,
-        teacher: req.user.id
-    });
+    // const level = await levelModel.findOne({
+    //     _id: levelId,
+    //     teacher: req.user.id
+    // });
 
-    if (!level) {
-        return next(new ResError("Level not found or not yours", 404));
-    }
+    // if (!level) {
+    //     return next(new ResError("Level not found or not yours", 404));
+    // }
 
     const apiFeatures = new ApiFeatures(
-        levelModel.find({ _id: levelId }).populate("students", "name email").populate("exams", "title description").select("-password -refreshToken"),
+        levelModel.find({ teachers: { $in: [req.user.id] } }).select("-teachers").populate("exams", "title description").select("-password -refreshToken"),
         req.query,
-        userModel
+        levelModel
     )
         .paginate()
         .filter()
@@ -62,26 +63,13 @@ export const getAllLevelStudents = async (req, res, next) => {
         .sort()
         .select();
 
-    const students = await apiFeatures.execute();
+    const levelsWithExams = await apiFeatures.execute();
 
     return res.status(200).json({
-        message: "Students fetched successfully",
-        count: students.length,
-        students
+        message: "levels with exams fetched successfully",
+        count: levelsWithExams.length,
+        data: levelsWithExams
     });
-}
-
-
-
-export const getAllTeacherExams = async (req, res, next) => {
-    const apiFeatures = new ApiFeatures(examModel.find({ teacher: req.user.id }).select("-teacher").populate("level", "title description"), req.query, examModel)
-        .paginate()
-        .filter()
-        .search()
-        .sort()
-        .select();
-    const result = await apiFeatures.execute();
-    return res.status(200).json(result);
 }
 
 
@@ -100,9 +88,9 @@ export const getAllExamStudents = async (req, res, next) => {
 
     const apiFeatures = new ApiFeatures(
         examModel.find({ _id: examId })
-        .select("-questions -teacher")
-        .populate("assignedStudents", "name email")
-        .select("-password -refreshToken"),
+            .select("-questions -teacher")
+            .populate("assignedStudents", "name email")
+            .select("-password -refreshToken"),
         req.query,
         userModel
     ).paginate()
@@ -120,41 +108,33 @@ export const getAllExamStudents = async (req, res, next) => {
 }
 
 
-export const assignStudentToExam = async (req, res, next) => {
-        const { studentId, examId } = req.params;
+export const assignStudentToLevel = async (req, res, next) => {
+    const { studentId, levelId } = req.params;
 
-        const student = await userModel.findById(studentId);
-        if (!student || student.role !== "STUDENT") {
-            return next(new ResError("Student not found", 404));
-        }
+    const student = await userModel.findById(studentId);
+    if (!student || student.role !== "STUDENT") {
+        return next(new ResError("Student not found", 404));
+    }
 
-        const exam = await examModel.findById(examId);
-        if (!exam) return next(new ResError("Exam not found", 404));
 
-        if (exam.teacher.toString() !== req.user.id) {
-            return next(new ResError("You are not authorized to assign students to this exam", 403));
-        }
+    const level = await levelModel.findById(levelId);
+    if (!level) return next(new ResError("level not found", 404));
 
-        await Promise.all([
-            userModel.findByIdAndUpdate(studentId, {
-                $addToSet: { openedExams: examId },
-            }),
-            examModel.findByIdAndUpdate(examId, {
-                $addToSet: { assignedStudents: studentId },
-            }),
-        ]);
+    if (student.level && student.level.toString() === levelId) {
+        return next(new ResError("student already assigned to this level", 403));
+    }
 
-        const updatedStudent = await userModel
-            .findById(studentId)
-            .populate("openedExams", "title description");
+    await userModel.findByIdAndUpdate(studentId, {
+        $addToSet: { level: levelId },
+    })
 
-        return res.status(200).json({
-            success: true,
-            message: "Student assigned to exam successfully",
-            data: {
-                id: updatedStudent._id,
-                name: updatedStudent.name,
-                exams: updatedStudent.openedExams,
-            },
-        });
+    return res.status(200).json({
+        success: true,
+        message: "Student assigned to level successfully",
+        data: {
+            id: updatedStudent._id,
+            name: updatedStudent.name,
+            exams: updatedStudent.openedExams,
+        },
+    });
 };

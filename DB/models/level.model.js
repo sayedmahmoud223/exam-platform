@@ -19,7 +19,7 @@ levelSchema.virtual("exams", {
 levelSchema.virtual("students", {
     ref: "User",
     localField: "_id",
-    foreignField: "levels",
+    foreignField: "level",
 });
 
 levelSchema.set("toJSON", { virtuals: true });
