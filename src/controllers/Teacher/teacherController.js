@@ -40,20 +40,9 @@ export const getAllTeacherLevels = async (req, res, next) => {
     return res.status(200).json(result);
 }
 
-export const getAllTeachersLevelsWithExams = async (req, res, next) => {
-    // const { levelId } = req.params;
-
-    // const level = await levelModel.findOne({
-    //     _id: levelId,
-    //     teacher: req.user.id
-    // });
-
-    // if (!level) {
-    //     return next(new ResError("Level not found or not yours", 404));
-    // }
-
+export const getTeacherLevels = async (req, res, next) => {
     const apiFeatures = new ApiFeatures(
-        levelModel.find({ teachers: { $in: [req.user.id] } }).select("-teachers").populate("exams", "title description").select("-password -refreshToken"),
+        levelModel.find({ teachers: { $in: [req.user.id] } }).select("-teachers").populate("exams", "title description group startTime durationMinutes passingScore").select("-password -refreshToken"),
         req.query,
         levelModel
     )
@@ -72,7 +61,59 @@ export const getAllTeachersLevelsWithExams = async (req, res, next) => {
     });
 }
 
+export const getTeacherLevelsWithExams = async (req, res, next) => {
 
+    const levels = await levelModel
+        .find({ teachers: { $in: [req.user.id] } })
+        .select("title description subLevels")
+        .lean();
+
+    if (!levels.length) {
+        return next(new ResError("Teacher doesn't have any levels", 404));
+    }
+
+    const levelIds = levels.map((lvl) => lvl._id);
+
+    const examsGrouped = await examModel.aggregate([
+        { $match: { level: { $in: levelIds } } },
+        {
+            $group: {
+                _id: { level: "$level", group: "$group" },
+                exams: {
+                    $push: {
+                        _id: "$_id",
+                        title: "$title",
+                        description: "$description",
+                        startTime: "$startTime",
+                        durationMinutes: "$durationMinutes",
+                        passingScore: "$passingScore",
+                    },
+                },
+            },
+        },
+        { $sort: { "_id.group": 1 } },
+    ]);
+
+    const result = levels.map((level) => {
+        const levelExams = examsGrouped
+            .filter((eg) => String(eg._id.level) === String(level._id))
+            .map((eg) => ({
+                group: eg._id.group,
+                exams: eg.exams,
+            }));
+
+        return {
+            ...level,
+            examsGrouped: levelExams,
+        };
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Fetched successfully",
+        data: { levels: result },
+    });
+};
 
 export const getAllExamStudents = async (req, res, next) => {
     const { examId } = req.params;
@@ -120,21 +161,22 @@ export const assignStudentToLevel = async (req, res, next) => {
     const level = await levelModel.findById(levelId);
     if (!level) return next(new ResError("level not found", 404));
 
-    if (student.level && student.level.toString() === levelId) {
+    if (student.level == level._id) {
         return next(new ResError("student already assigned to this level", 403));
     }
 
     await userModel.findByIdAndUpdate(studentId, {
-        $addToSet: { level: levelId },
+        level: levelId,
     })
 
     return res.status(200).json({
         success: true,
         message: "Student assigned to level successfully",
         data: {
-            id: updatedStudent._id,
-            name: updatedStudent.name,
-            exams: updatedStudent.openedExams,
+            id: student._id,
+            name: student.name,
+            levelId: level._id,
+            levelName: level.title
         },
     });
 };
